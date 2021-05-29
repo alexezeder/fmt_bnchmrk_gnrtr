@@ -11,7 +11,7 @@ class FmtBnchmrkRepo:
 
     def __init__(self):
         self.temp_dir = tempfile.TemporaryDirectory()
-        self.repo = git.Repo.clone_from('git@github.com:alexezeder/fmt_bnchmrk_new.git', self.temp_dir.name)
+        self.repo = git.Repo.clone_from('git@github.com:alexezeder/fmt_bnchmrk.git', self.temp_dir.name)
         origin_refs = self.repo.remotes['origin'].refs
         if FmtBnchmrkRepo.pages_branch_name in origin_refs:
             self.repo.remotes['origin'].fetch(refspec='{}:{}'.format(FmtBnchmrkRepo.pages_branch_name,

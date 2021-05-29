@@ -1,7 +1,7 @@
 ## Generator of [{fmt}](https://github.com/fmtlib/fmt) benchmark results
 
 This project creates the nice output for [fmt_bnchmrk](https://github.com/alexezeder/fmt_bnchmrk) - just 
-[check it out]().
+[check it out](https://alexezeder.github.io/fmt_bnchmrk).
 
 ### How to run
 
