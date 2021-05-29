@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>fmt_bnchmrk • {{ current_page_name }}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500&display=swap" rel="stylesheet">
+  <link href="style.css" rel="stylesheet">
+</head>
+
+<body>
+  <div class="container-fluid h-100">
+    <div class="row h-100">
+      <nav class="col-md-3 col-lg-2 bg-dark sidebar">
+        <div class="position-sticky pt-3">
+          <h6 class="sidebar-heading px-3 mt-4 mb-1">
+            <span>Pages</span>
+          </h6>
+          <ul class="nav flex-column mb-2">
+            {% for page in pages %}
+            <li class="nav-item {{ "active" if page.name == current_page_name }}" title="{{ page.description|e }}">
+              <a class="nav-link" href="{{ page.slug }}.html">
+                <i class="bi {{ page.icon }}"></i>
+                {{ page.name }}
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </nav>
+
+      <main class="col-md-9 col-lg-10 d-flex justify-content-center">
+        <div class="align-self-center text-center">
+          <h1>Wow, such empty</h1>
+          <h6>Use Pages menu to see the results</h6>
+          {% for meta_value in meta_values %}
+          <span class="text-muted meta-info clearfix d-flex justify-content-center">{{ meta_value[0] }}: {{ meta_value[1] }}</span>
+          {% endfor %}
+        </div>
+        </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous">
+  </script>
+</body>
+
+</html>

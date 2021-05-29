@@ -1,0 +1,182 @@
+dayjs.extend(window.dayjs_plugin_utc)
+dayjs.extend(window.dayjs_plugin_timezone)
+dayjs.extend(window.dayjs_plugin_advancedFormat)
+
+
+const colors = [
+  [255, 0, 0],
+  [0, 0, 255],
+  [0, 255, 0],
+  [254, 255, 0],
+  [0, 254, 255],
+  [255, 0, 254],
+  [255, 127, 127],
+  [127, 127, 255],
+  [127, 255, 127],
+  [254, 255, 127],
+  [127, 254, 255],
+  [255, 127, 254],
+  [127, 0, 0],
+  [0, 0, 127],
+  [0, 127, 0],
+  [127, 127, 0],
+  [0, 127, 127],
+  [127, 0, 127],
+];
+
+const getColor = (index, opacity) => {
+  let color = colors[index];
+  return 'rgb(' + color[0] + ', ' + color[1] +  ', ' + color[2] + ', ' + opacity + ')';
+};
+
+const commits = [
+  {% for result in results %}
+  {
+    hash: '{{ result.commit_hash }}',
+    message: {{ result.commit_message|wordwrap(width=60)|tojson }},
+    date: dayjs.unix({{ result.commit_timepoint }}),
+  },
+  {% endfor %}
+];
+
+const data = {
+  labels: [
+    {% for result in results %}
+    {{ loop.index0 }},
+    {% endfor %}
+  ],
+  datasets: [
+    {% for benchmark in benchmarks %}
+    {
+      label: '{{ benchmark }}',
+      data: [
+        {% for result in results %}
+        {{ result.get_benchmark(benchmark) }},
+        {% endfor %}
+      ],
+      fill: false,
+      cubicInterpolationMode: 'monotone',
+      tension: 0.4,
+      radius: 0,
+      borderColor: getColor({{ loop.index0 }}, 1.0),
+      backgroundColor: getColor({{ loop.index0 }}, 0.5),
+      {% if is_multi_axes %}
+      yAxisID: {{ benchmark|tojson }},
+      {% endif %}
+    },
+    {% endfor %}
+  ]
+};
+
+const getCommitMessage = (tooltipItems) => {
+  let index = tooltipItems[0].dataIndex;
+  let commit = commits[index];
+  return commit.message;
+};
+const getCommitInfo = (tooltipItems) => {
+  let index = tooltipItems[0].dataIndex;
+  let commit = commits[index];
+  return commit.hash + '\n' + commit.date.format('YYYY-MM-DD HH:mm:ss z');
+};
+const htmlToElement = (html) => {
+  let template = document.createElement('template');
+  html = html.trim();
+  template.innerHTML = html;
+  return template.content.firstChild;
+};
+const getCommitLink = (commitHash) => {
+  return "https://github.com/fmtlib/fmt/commit/"+commitHash;
+};
+const createAlert = (isSuccessful, commitHash) => {
+  return htmlToElement('\
+    <div class="user-select-none alert alert-' + (isSuccessful ? 'success' : 'warning') +'" role="alert">\
+      Commit hash ' + (isSuccessful ? 'is' : 'couldn\'t be') +' copied to clipboard!\
+      <a class="alert-link">Open it on Github</a>.\
+    </div>');
+};
+const createToast = (isSuccessful, commitHash) => {
+  let toastsContainer = document.getElementById('toasts');
+  let alertEl = createAlert(isSuccessful, commitHash);
+  return Toastify({
+    node: alertEl,
+    duration: 3000,
+    destination: getCommitLink(commitHash),
+    newWindow: true,
+    close: false,
+    stopOnFocus: true,
+    selector: toastsContainer,
+    callback: () => { alertEl.remove(); }
+  });
+};
+const onChartClick = (event, elements, chart) => {
+  if (elements.length > 0) {
+    let index = elements[0].index;
+    let commit = commits[index];
+
+    navigator.clipboard.writeText(commit.hash).then(function() {
+      createToast(true, commit.hash).showToast();
+    }, function() {
+      createToast(false, commit.hash).showToast();
+    });
+  }
+};
+
+const config = {
+  type: 'line',
+  data: data,
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      intersect: false,
+      mode: 'index',
+    },
+    scales: {
+      x: {
+        ticks: {
+            display: false,
+        },
+        grid: {
+            display: false,
+        }
+      },
+      {% if is_multi_axes %}
+      {% for benchmark in benchmarks %}
+      {{ benchmark|tojson }}: {
+        title: {
+          display: true,
+          text: '{{ benchmark }}',
+          color: getColor({{ loop.index0 }}, 1.0),
+        },
+        ticks: {
+          color: getColor({{ loop.index0 }}, 1.0),
+        },
+        type: 'linear',
+        display: true,
+        position: '{{ loop.cycle('left', 'right') }}',
+        grid: {
+          drawOnChartArea: true,
+          color: getColor({{ loop.index0 }}, 0.5),
+        },
+      },
+      {% endfor %}
+      {% endif %}
+    },
+    plugins: {
+      tooltip: {
+        callbacks: {
+          title: getCommitMessage,
+          beforeBody: getCommitInfo,
+        }
+      },
+      title: {
+        display: true,
+        text: {{ description|tojson }},
+      }
+    },
+    onClick: onChartClick,
+  }
+};
+
+let ctx = document.getElementById('benchmarkChart');
+let bnchChart = new Chart(ctx, config);

@@ -1,0 +1,55 @@
+html {
+  height: 100%;
+}
+
+body {
+  font-size: .89rem;
+  height: 100%;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 300;
+}
+
+.sidebar {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  box-shadow: inset -10px 0 10px rgba(0, 0, 0, .5);
+}
+
+.sidebar-heading {
+  font-weight: 500;
+}
+
+.sidebar .nav-link {
+  color: #bbb;
+}
+
+.sidebar .nav-link i {
+  margin-right: 4px;
+  color: #fff;
+}
+
+.sidebar .active .nav-link {
+  color: #fff;
+}
+
+.sidebar .nav-link:hover i,
+.sidebar .active .nav-link i {
+  color: inherit;
+}
+
+.sidebar-heading {
+  font-size: .92rem;
+  text-transform: uppercase;
+  color: #ccc;
+}
+
+.alert-link {
+  font-weight: 500;
+}
+
+.meta-info {
+  font-size: .7rem;
+  line-height: .72rem;
+  overflow: hidden;
+}
