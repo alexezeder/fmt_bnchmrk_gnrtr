@@ -87,9 +87,16 @@ def execute_task(docker_client: DockerClient, fmt_repo: FmtRepo, fmt_bnchmrk_rep
         fmt_bnchmrk_repo.get_directory(): {'bind': '/benchmarks', 'mode': 'ro'},
         temp_dir_name: {'bind': '/output', 'mode': 'rw'}
     }
+    environment = {
+        "RUNNER_MAX_THREADS": 2,
+        "RUNNER_COMPILATION_RUNS": 4,
+        "RUNNER_COMPILATION_PAUSE": 0.5,
+        "RUNNER_BENCHMARK_RUNS": 2,
+    }
 
     try:
-        docker_client.containers.run(get_image_name_for_runner(runner.name), detach=False, volumes=volumes)
+        docker_client.containers.run(get_image_name_for_runner(runner.name),
+                                     detach=False, volumes=volumes, environment=environment)
     except errors.ContainerError:
         return None
 
