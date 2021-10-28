@@ -51,18 +51,29 @@ def get_stat_results(temp_dir_name: str) -> List[Tuple[str, float]]:
 
 
 def get_suites_results(temp_dir_name: str) -> List[Tuple[str, float]]:
-    results = list()
+    files: List[str] = glob.glob(os.path.join(temp_dir_name, '*.json'))
 
-    files = glob.glob(os.path.join(temp_dir_name, '*.json'))
+    class Result:
+        def __init__(self, name: str, amount: int, time: float):
+            self.name: str = name
+            self.amount: int = amount
+            self.time: float = time
+
+    results: List[Result] = list()
     for file_path in files:
         with open(file_path, 'r') as results_json:
             parsed = json.load(results_json)
             for benchmark in parsed['benchmarks']:
                 result_name = str(benchmark['name'])
                 result_time = float(benchmark['real_time'])
-                results.append((result_name, result_time))
+                filtered_results: List[Result] = [result for result in results if result.name == result_name]
+                if len(filtered_results) == 0:
+                    results.append(Result(result_name, 1, result_time))
+                else:
+                    filtered_results[0].time += result_time
+                    filtered_results[0].amount += 1
 
-    return results
+    return [(result.name, result.time / result.amount) for result in results]
 
 
 def execute_task(docker_client: DockerClient, fmt_repo: FmtRepo, fmt_bnchmrk_repo: FmtBnchmrkRepo, commit: Commit,

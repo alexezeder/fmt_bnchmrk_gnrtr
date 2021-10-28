@@ -37,7 +37,7 @@ cd "$(mktemp -d)"
 cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=20 /benchmarks
 make all -k -j2 || true  # keep on errors so we can get at least some results
 for suite_executable in output/*; do
-    for i in {1..2}; do # for some reason result on the second run are more consistent
-        $suite_executable --benchmark_out="/output/$(basename -- $suite_executable)_results.json" --benchmark_out_format=json
+    for i in {1..2}; do
+        $suite_executable --benchmark_out="/output/$(basename -- "$suite_executable")_results_$i.json" --benchmark_out_format=json
     done
 done
