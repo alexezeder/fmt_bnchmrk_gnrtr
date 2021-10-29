@@ -36,8 +36,18 @@
       <main class="col-md-9 col-lg-10 d-flex justify-content-center">
         <div class="align-self-center text-center">
           <h3>Use Pages menu to see the results</h3>
+          <span class="text-muted meta-info clearfix d-flex justify-content-center">{{ bnchmrk_meta[0] }}:&nbsp;
+            <a class="text-muted text-decoration-none" href="https://github.com/alexezeder/fmt_bnchmrk/commit/{{ bnchmrk_meta[1] }}" target="_blank">
+            {{ bnchmrk_meta[1] }}
+            </a>
+          </span>
+          <span class="text-muted meta-info clearfix d-flex justify-content-center">{{ bnchmrk_generator_meta[0] }}:&nbsp;
+            <a class="text-muted text-decoration-none" href="https://github.com/alexezeder/fmt_bnchmrk_gnrtr/commit/{{ bnchmrk_generator_meta[1] }}" target="_blank">
+            {{ bnchmrk_generator_meta[1] }}
+            </a>
+          </span>
           {% for meta_value in meta_values %}
-          <span class="text-muted meta-info clearfix d-flex justify-content-center">{{ meta_value[0] }}: {{ meta_value[1] }}</span>
+          <span class="text-muted meta-info clearfix d-flex justify-content-center">{{ meta_value[0] }}:&nbsp;{{ meta_value[1] }}</span>
           {% endfor %}
         </div>
         </main>

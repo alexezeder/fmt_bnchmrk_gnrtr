@@ -1,19 +1,22 @@
 import hashlib
 import os
+import platform
+import re
 import sqlite3
+import subprocess
 from typing import List, Optional, Tuple
 
-from classes import Runner, Commit
+from classes import Runner, Commit, Config
 
 
 class Database:
     def __init__(self,
-                 db_files_directory: str,
+                 config: Config,
                  final_components_hash: str,
                  bnchmrk_commit_hash: str,
                  gnrtr_commit_hash: str):
         db_file_name: str = 'bnchmrk_{}.db'.format(final_components_hash)
-        self.db_file_path: str = os.path.join(db_files_directory, db_file_name)
+        self.db_file_path: str = os.path.join(config.database_dir, db_file_name)
         if not os.path.exists(self.db_file_path):
             self.connection = sqlite3.connect(self.db_file_path)
             cursor = self.connection.cursor()
@@ -55,13 +58,42 @@ class Database:
                     FOREIGN KEY (runner_ID) REFERENCES runners (ID)
                 )
                 ''')
+
+            lsb_release: str = subprocess.run(['lsb_release', '-d'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            lsb_release_match = re.search("Description:\s*(.+)", lsb_release)
+            lsb_release = lsb_release_match.group(1) if lsb_release_match else 'unknown platform'
+            kernel_release: str = subprocess.run(['uname', '-r'], stdout=subprocess.PIPE).stdout.decode('utf-8')[:-1]
+            architecture: str = platform.machine()
+            lscpu_output: str = subprocess.run(['lscpu'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            cpu_name_match = re.search("Model name:\s*(.+)", lscpu_output)
+            cpu_name: str = cpu_name_match.group(1) if cpu_name_match else 'unknown model name'
+            cpus_amount_match = re.search("CPU\(s\):\s*(.+)", lscpu_output)
+            cpus_amount: str = cpus_amount_match.group(1) if cpus_amount_match else 'unknown CPUs amount'
+            max_threads: int = config.max_threads
+            compilation_runs: int = config.compilation_runs
+            benchmark_runs: int = config.benchmark_runs
+
             cursor.execute(
                 '''
                 INSERT INTO meta (key, value)
                 VALUES
+                    ('platform', '{lsb_release} {kernel_release}'),
+                    ('architecture', '{architecture}'),
+                    ('processor', '{processor_model_name} {processor_cpus_amount}'),
+                    ('max threads', '{max_threads}'),
+                    ('compilation runs', '{compilation_runs}'),
+                    ('each benchmark runs', '{benchmark_runs}'),
                     ('fmt_bnchmrk commit', '{bnchmrk_commit_hash}'),
                     ('fmt_bnchmrk_gnrtr commit', '{gnrtr_commit_hash}');
                 '''.format(
+                    lsb_release=lsb_release,
+                    kernel_release=kernel_release,
+                    architecture=architecture,
+                    processor_model_name=cpu_name,
+                    processor_cpus_amount=cpus_amount,
+                    max_threads=max_threads,
+                    compilation_runs=compilation_runs,
+                    benchmark_runs=benchmark_runs,
                     bnchmrk_commit_hash=bnchmrk_commit_hash,
                     gnrtr_commit_hash=gnrtr_commit_hash,
                 ))
@@ -197,7 +229,7 @@ class Database:
             ))
         return list(exec_result)
 
-    def get_meta_values(self) -> List[Tuple]:
+    def get_meta_values(self) -> List[Tuple[str, str]]:
         cursor = self.connection.cursor()
         exec_result = cursor.execute(
             '''

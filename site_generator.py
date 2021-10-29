@@ -158,9 +158,22 @@ class HomePage(Page):
                       slug='index')
 
     def generate(self, filtered_results, pages, fmt_repo: FmtRepo, db: Database, directory: str):
+        meta_values: List[Tuple[str, str]] = db.get_meta_values()
+        bnchmrk_meta = None
+        bnchmrk_generator_meta = None
+        for meta_value in meta_values:
+            if meta_value[0] == 'fmt_bnchmrk commit':
+                bnchmrk_meta = meta_value
+            elif meta_value[0] == 'fmt_bnchmrk_gnrtr commit':
+                bnchmrk_generator_meta = meta_value
+        meta_values.remove(bnchmrk_meta)
+        meta_values.remove(bnchmrk_generator_meta)
+
         result_html = self.template_html.render(pages=pages,
                                                 current_page_name=self.name,
-                                                meta_values=db.get_meta_values())
+                                                meta_values=meta_values,
+                                                bnchmrk_meta=bnchmrk_meta,
+                                                bnchmrk_generator_meta=bnchmrk_generator_meta)
         result_html = html_minify(result_html)
         with open(os.path.join(directory, '{}.html'.format(self.slug)), 'w') as html_file:
             html_file.write(result_html)

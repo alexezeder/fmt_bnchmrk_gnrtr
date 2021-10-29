@@ -138,7 +138,7 @@ def main(config: Config):
         final_components_hash: str = hash_md5.hexdigest()
 
     with StepPrinter('Preparing database'):
-        db = Database(config.database_dir, final_components_hash, bnchmrk_commit_hash, gnrtr_commit_hash)
+        db = Database(config, final_components_hash, bnchmrk_commit_hash, gnrtr_commit_hash)
     with db, StepPrinter('Synchronizing runners info with database'):
         db.synchronize_runners(runners)
 
