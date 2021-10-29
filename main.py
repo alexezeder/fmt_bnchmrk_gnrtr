@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import glob
 import hashlib
 import json
@@ -11,7 +12,7 @@ from typing import List, Tuple, Optional
 import git
 from docker import DockerClient, from_env, errors
 
-from classes import Runner, Commit
+from classes import Runner, Commit, Config
 from database import Database
 from fmt_bnchmrk_git_repository import FmtBnchmrkRepo
 from fmt_git_repository import FmtRepo
@@ -77,7 +78,7 @@ def get_suites_results(temp_dir_name: str) -> List[Tuple[str, float]]:
 
 
 def execute_task(docker_client: DockerClient, fmt_repo: FmtRepo, fmt_bnchmrk_repo: FmtBnchmrkRepo, commit: Commit,
-                 runner: Runner) -> Optional[List[Tuple[str, float]]]:
+                 runner: Runner, config: Config) -> Optional[List[Tuple[str, float]]]:
     fmt_repo.set_current_commit(commit.hash)
 
     temp_dir = tempfile.TemporaryDirectory()
@@ -88,10 +89,10 @@ def execute_task(docker_client: DockerClient, fmt_repo: FmtRepo, fmt_bnchmrk_rep
         temp_dir_name: {'bind': '/output', 'mode': 'rw'}
     }
     environment = {
-        "RUNNER_MAX_THREADS": 2,
-        "RUNNER_COMPILATION_RUNS": 4,
-        "RUNNER_COMPILATION_PAUSE": 0.5,
-        "RUNNER_BENCHMARK_RUNS": 2,
+        "RUNNER_MAX_THREADS": config.max_threads,
+        "RUNNER_COMPILATION_RUNS": config.compilation_runs,
+        "RUNNER_COMPILATION_PAUSE": config.compilations_pause,
+        "RUNNER_BENCHMARK_RUNS": config.benchmark_runs,
     }
 
     try:
@@ -105,7 +106,7 @@ def execute_task(docker_client: DockerClient, fmt_repo: FmtRepo, fmt_bnchmrk_rep
     return results
 
 
-def main():
+def main(config: Config):
     with StepPrinter('Preparing fmt_bnchmrk repository'):
         fmt_bnchmrk_repo = FmtBnchmrkRepo()
     with StepPrinter('Preparing {fmt} repository'):
@@ -131,12 +132,13 @@ def main():
         hash_md5 = hashlib.md5()
         hash_md5.update(bnchmrk_commit_hash.encode('utf-8'))
         hash_md5.update(gnrtr_commit_hash.encode('utf-8'))
+        hash_md5.update(config.as_bytes())
         for runner in runners:
             hash_md5.update(runner.docker_ID.encode('utf-8'))
         final_components_hash: str = hash_md5.hexdigest()
 
     with StepPrinter('Preparing database'):
-        db = Database('.', final_components_hash, bnchmrk_commit_hash, gnrtr_commit_hash)
+        db = Database(config.database_dir, final_components_hash, bnchmrk_commit_hash, gnrtr_commit_hash)
     with db, StepPrinter('Synchronizing runners info with database'):
         db.synchronize_runners(runners)
 
@@ -153,20 +155,56 @@ def main():
                 if commit.ID is not None:
                     continue
                 with StepPrinter('Executing task on commit "{}" with runner "{}"'.format(commit.hash, runner.name)):
-                    results = execute_task(docker_client, fmt_repo, fmt_bnchmrk_repo, commit, runner)
+                    results = execute_task(docker_client, fmt_repo, fmt_bnchmrk_repo, commit, runner, config)
                 with db, StepPrinter('Saving results to database'):
                     db.save_results(commit, runner, results)
 
             new_hash: str = db.calculate_hash()
             if last_hash != new_hash:
-                temp_dir = tempfile.TemporaryDirectory()
+                if config.website_output_dir is None:
+                    temp_dir = tempfile.TemporaryDirectory()
+                    website_dir = temp_dir.name
+                else:
+                    website_dir = config.website_output_dir
                 with db, StepPrinter('Generating website'):
-                    site_generator.generate(db, fmt_repo, runners, temp_dir.name)
-                    fmt_bnchmrk_repo.commit_pages(temp_dir.name)
+                    site_generator.generate(db, fmt_repo, runners, website_dir)
+                    if config.commit_bnchmrk_pages:
+                        fmt_bnchmrk_repo.commit_pages(website_dir)
                     last_hash = new_hash
 
         time.sleep(60)
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description='Generation of fmt_bnchmrk HTML result pages',
+                                     formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('--max-threads', dest='max_threads', type=int, default=Config.default_max_threads,
+                        help='maximum amount of threads for library and benchmarks building\n(default: {})'.format(
+                            Config.default_max_threads))
+    parser.add_argument('--compilation-runs', dest='compilation_runs', type=int,
+                        default=Config.default_compilation_runs,
+                        help='amount of library compilations (average compilation time calculated in this case)\n'
+                             '(default: {})'.format(Config.default_compilation_runs))
+    parser.add_argument('--compilations-pause', dest='compilations_pause', type=float,
+                        default=Config.default_compilations_pause,
+                        help='pause between each library compilation procedure\n(default: {})'.format(
+                            Config.default_compilations_pause))
+    parser.add_argument('--benchmark-runs', dest='benchmark_runs', type=int, default=Config.default_benchmark_runs,
+                        help='amount of each benchmark suite runs (average time calculated in this case)\n'
+                             '(default: {})'.format(Config.default_benchmark_runs))
+    parser.add_argument('--commit-bnchmrk-pages', dest='commit_bnchmrk_pages', type=bool,
+                        default=Config.default_commit_bnchmrk_pages,
+                        help='in case if you have an access to fmt_bnchmrk repo, if not provided, then local website '
+                             'is generated\n(default: false)')
+    parser.add_argument('--website-output-dir', dest='website_output_dir', type=str,
+                        default=Config.default_website_output_dir,
+                        help='in case if you don\'t have an access to fmt_bnchmrk repo or you want to generate website '
+                             'locally (ignored if --commit-bnchmrk-pages provided)\n'
+                             '(default: "{}")'.format(Config.default_website_output_dir))
+    parser.add_argument('--database-dir', dest='database_dir', type=str, default=Config.default_database_dir,
+                        help='directory to save database file\n(default: "{}")'.format(Config.default_database_dir))
+
+    args = parser.parse_args()
+    config: Config = Config(args.max_threads, args.compilation_runs, args.compilations_pause, args.benchmark_runs,
+                            args.commit_bnchmrk_pages, args.website_output_dir, args.database_dir)
+    main(config)
