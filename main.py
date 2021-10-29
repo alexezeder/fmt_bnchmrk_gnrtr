@@ -176,6 +176,9 @@ def main(config: Config):
 
 
 if __name__ == '__main__':
+    def boolean_string(s):
+        return s in {'True', 'true', '1', 'on', 'yes', 'y'}
+
     parser = argparse.ArgumentParser(description='Generation of fmt_bnchmrk HTML result pages',
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('--max-threads', dest='max_threads', type=int, default=Config.default_max_threads,
@@ -192,7 +195,7 @@ if __name__ == '__main__':
     parser.add_argument('--benchmark-runs', dest='benchmark_runs', type=int, default=Config.default_benchmark_runs,
                         help='amount of each benchmark suite runs (average time calculated in this case)\n'
                              '(default: {})'.format(Config.default_benchmark_runs))
-    parser.add_argument('--commit-bnchmrk-pages', dest='commit_bnchmrk_pages', type=bool,
+    parser.add_argument('--commit-bnchmrk-pages', dest='commit_bnchmrk_pages', type=boolean_string,
                         default=Config.default_commit_bnchmrk_pages,
                         help='in case if you have an access to fmt_bnchmrk repo, if not provided, then local website '
                              'is generated\n(default: false)')
