@@ -244,6 +244,16 @@ class SiteGenerator:
         pages.append(BenchmarkGroupPage(name='format_to • args',
                                         description='fmt::format_to() with format string and 3 arguments',
                                         patterns=[re.compile(r'^format_to_args_(?P<name>.*)$')]))
+        pages.append(BenchmarkGroupPage(name='format_to • chrono • general',
+                                        description='fmt::format_to() with some general chrono format strings',
+                                        patterns=[re.compile(
+                                            r'^format_to_chrono_(?P<name>without_specs|with_specs_simple|with_specs_complex)$')]))
+        pages.append(BenchmarkGroupPage(name='format_to • chrono • specs',
+                                        description='fmt::format_to() with format string with specs',
+                                        patterns=[re.compile(r'^format_to_chrono_(?P<name>((?!locale|with).)+)$')]))
+        pages.append(BenchmarkGroupPage(name='format_to • chrono • locale',
+                                        description='fmt::format_to() with format string with locale-specific specs',
+                                        patterns=[re.compile(r'^format_to_chrono_(?P<name>\S+_locale)$')]))
 
         with open(os.path.join(self.templates_path, 'style.css'), 'r') as css_in, open(
                 os.path.join(pages_dir, 'style.css'), 'w') as css_out:
