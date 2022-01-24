@@ -221,9 +221,7 @@ class Database:
             INNER JOIN commits ON commits.ID = results.commit_ID
             INNER JOIN runners ON runners.ID = results.runner_ID
             WHERE
-                runners.ID = '{runner_id}'
-            ORDER BY
-                commit_timepoint ASC;
+                runners.ID = '{runner_id}';
             '''.format(
                 runner_id=runner_id
             ))

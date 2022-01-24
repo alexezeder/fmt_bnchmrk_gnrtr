@@ -264,7 +264,7 @@ class SiteGenerator:
         sorted_results_from_db = db.get_results_for(runners[0].ID)
         sorted_results = list()
         unique_commits_hashes: Set[str] = set()
-        for result in reversed(sorted_results_from_db):
+        for result in sorted_results_from_db:
             unique_commits_hashes.add(result[0])
             if len(unique_commits_hashes) > classes.commits_number_limit:
                 break
