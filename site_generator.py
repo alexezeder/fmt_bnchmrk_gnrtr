@@ -255,9 +255,11 @@ class SiteGenerator:
                                         description='fmt::format_to() with format string with locale-specific specs',
                                         patterns=[re.compile(r'^format_to_chrono_(?P<name>\S+_locale)$')]))
 
-        with open(os.path.join(self.templates_path, 'style.css'), 'r') as css_in, open(
-                os.path.join(pages_dir, 'style.css'), 'w') as css_out:
-            css_out.write(css_minify(css_in.read()))
+        os.makedirs(pages_dir, exist_ok=True)
+
+        with open(os.path.join(self.templates_path, 'style.css'), 'r') as css_in:
+            with open(os.path.join(pages_dir, 'style.css'), 'w+') as css_out:
+                css_out.write(css_minify(css_in.read()))
 
         sorted_results_from_db = db.get_results_for(runners[0].ID)
         sorted_results = list()
