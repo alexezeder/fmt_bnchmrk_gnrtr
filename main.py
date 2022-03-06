@@ -150,29 +150,32 @@ def main(config: Config):
         with db, StepPrinter('Updating commits info from the database'):
             db.update_commits(commits)
 
-        for commit in commits:
-            for runner in runners:
-                if commit.is_processed:
-                    continue
-                with StepPrinter('Executing task on commit "{}" with runner "{}"'.format(commit.hash, runner.name)):
-                    results = execute_task(docker_client, fmt_repo, fmt_bnchmrk_repo, commit, runner, config)
-                with db, StepPrinter('Saving results to database'):
-                    db.save_results(commit, runner, results)
+        has_non_processed_commits: bool = len([x for x in commits if not x.is_processed]) > 0
+        if has_non_processed_commits:
+            for commit in commits:
+                for runner in runners:
+                    if commit.is_processed:
+                        continue
+                    with StepPrinter('Executing task on commit "{}" with runner "{}"'.format(commit.hash, runner.name)):
+                        results = execute_task(docker_client, fmt_repo, fmt_bnchmrk_repo, commit, runner, config)
+                    with db, StepPrinter('Saving results to database'):
+                        db.save_results(commit, runner, results)
 
-            new_hash: str = db.calculate_hash()
-            if last_hash != new_hash:
-                if config.website_output_dir is None:
-                    temp_dir = tempfile.TemporaryDirectory()
-                    website_dir = temp_dir.name
-                else:
-                    website_dir = config.website_output_dir
-                with db, StepPrinter('Generating website'):
-                    site_generator.generate(db, fmt_repo, runners, website_dir)
-                    if config.commit_bnchmrk_pages:
-                        fmt_bnchmrk_repo.commit_pages(website_dir)
-                    last_hash = new_hash
-
-        time.sleep(60)
+                new_hash: str = db.calculate_hash()
+                if last_hash != new_hash:
+                    if config.website_output_dir is None:
+                        temp_dir = tempfile.TemporaryDirectory()
+                        website_dir = temp_dir.name
+                    else:
+                        website_dir = config.website_output_dir
+                    with db, StepPrinter('Generating website'):
+                        site_generator.generate(db, fmt_repo, runners, website_dir)
+                        if config.commit_bnchmrk_pages:
+                            fmt_bnchmrk_repo.commit_pages(website_dir)
+                        last_hash = new_hash
+        else:
+            with StepPrinter('Sleeping'):
+                time.sleep(config.sleep_time)
 
 
 if __name__ == '__main__':
@@ -195,6 +198,8 @@ if __name__ == '__main__':
     parser.add_argument('--benchmark-runs', dest='benchmark_runs', type=int, default=Config.default_benchmark_runs,
                         help='amount of each benchmark suite runs (average time calculated in this case)\n'
                              '(default: {})'.format(Config.default_benchmark_runs))
+    parser.add_argument('--sleep-time', dest='sleep_time', type=int, default=Config.default_sleep_time,
+                        help='sleep time, when no new commits found\n(default: {})'.format(Config.default_sleep_time))
     parser.add_argument('--commit-bnchmrk-pages', dest='commit_bnchmrk_pages', type=boolean_string,
                         default=Config.default_commit_bnchmrk_pages,
                         help='in case if you have an access to fmt_bnchmrk repo, if not provided, then local website '
@@ -209,5 +214,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     config: Config = Config(args.max_threads, args.compilation_runs, args.compilations_pause, args.benchmark_runs,
-                            args.commit_bnchmrk_pages, args.website_output_dir, args.database_dir)
+                            args.sleep_time, args.commit_bnchmrk_pages, args.website_output_dir, args.database_dir)
     main(config)

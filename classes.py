@@ -26,17 +26,19 @@ class Config:
     default_compilation_runs: int = 4
     default_compilations_pause: float = 0.5
     default_benchmark_runs: int = 2
+    default_sleep_time: int = 60
     default_commit_bnchmrk_pages: bool = False
     default_website_output_dir = os.getcwd()
     default_database_dir = os.getcwd()
 
     def __init__(self, max_threads: int, compilation_runs: int, compilations_pause: float, benchmark_runs: int,
-                 commit_bnchmrk_pages: bool, website_output_dir: str, database_dir: str):
+                 sleep_time: int, commit_bnchmrk_pages: bool, website_output_dir: str, database_dir: str):
         self.ID: Optional[int] = None
         self.max_threads: int = max_threads
         self.compilation_runs: int = compilation_runs
         self.compilations_pause: float = compilations_pause
         self.benchmark_runs: int = benchmark_runs
+        self.sleep_time: int = sleep_time
         self.commit_bnchmrk_pages: bool = commit_bnchmrk_pages
         if commit_bnchmrk_pages:
             self.website_output_dir: Optional[str] = None
