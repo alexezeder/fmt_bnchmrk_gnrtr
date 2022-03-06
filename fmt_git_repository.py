@@ -32,10 +32,11 @@ class FmtRepo:
                 break
             for commit in commits:
                 available_commits.append(classes.Commit(commit.hexsha, commit.committed_date))
-                if len(available_commits) == classes.commits_number_limit:
-                    return available_commits
             offset += amount
-        return available_commits
+        max_index: int = len(available_commits) - 1
+        for index, commit in enumerate(available_commits):
+            commit.ID = max_index - index
+        return available_commits[:classes.commits_number_limit]
 
     def set_current_commit(self, commit: str):
         self.repo.head.reference = self.repo.commit(commit)

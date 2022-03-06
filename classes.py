@@ -18,6 +18,7 @@ class Commit:
         self.ID: Optional[int] = None
         self.hash: str = hash
         self.timepoint: int = timepoint
+        self.is_processed: bool = False
 
 
 class Config:

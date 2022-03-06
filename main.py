@@ -147,12 +147,12 @@ def main(config: Config):
         with StepPrinter('Updating {fmt} repository'):
             fmt_repo.update()
             commits = fmt_repo.get_available_commits()
-        with db, StepPrinter('Updating commits info in database'):
+        with db, StepPrinter('Updating commits info from the database'):
             db.update_commits(commits)
 
         for commit in commits:
             for runner in runners:
-                if commit.ID is not None:
+                if commit.is_processed:
                     continue
                 with StepPrinter('Executing task on commit "{}" with runner "{}"'.format(commit.hash, runner.name)):
                     results = execute_task(docker_client, fmt_repo, fmt_bnchmrk_repo, commit, runner, config)

@@ -32,7 +32,7 @@ class Database:
                 '''
                 CREATE TABLE commits
                 (
-                    ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    ID INTEGER NOT NULL PRIMARY KEY,
                     hash TEXT NOT NULL,
                     timepoint INTEGER NOT NULL
                 )
@@ -152,14 +152,19 @@ class Database:
         self.connection.commit()
 
     def _get_commit_identifier_(self, commit: Commit) -> Optional[int]:
-        return self._get_identifier_("commits", "hash", commit.hash)
+        cursor = self.connection.cursor()
+        exec_result = cursor.execute(
+            'SELECT ID FROM commits WHERE ID = "{ID}";'.format(
+                ID=commit.ID
+            ))
+        for row in exec_result:
+            return row[0]
+        return None
 
     def update_commits(self, commits: List[Commit]):
         for commit in commits:
             identifier: Optional[int] = self._get_commit_identifier_(commit)
-            if identifier is not None:
-                commit.ID = identifier
-                continue
+            commit.is_processed = identifier is not None
 
     def has_results_for(self, commit: Commit, runner: Runner):
         cursor = self.connection.cursor()
@@ -182,13 +187,13 @@ class Database:
         cursor = self.connection.cursor()
         cursor.execute(
             '''
-            INSERT INTO commits (hash, timepoint)
-            VALUES ('{hash}', {timepoint});
+            INSERT INTO commits (ID, hash, timepoint)
+            VALUES ({ID}, '{hash}', {timepoint});
             '''.format(
+                ID=commit.ID,
                 hash=commit.hash,
                 timepoint=commit.timepoint
             ))
-        commit.ID = cursor.lastrowid
         if results is not None:
             cursor.executemany(
                 '''
@@ -213,7 +218,7 @@ class Database:
             '''
             SELECT
                 commits.hash AS commit_hash,
-                commits.timepoint AS commit_timepoint,
+                commits.ID AS commit_ID,
                 results.name AS result_name,
                 results.time AS result_time
             FROM
@@ -221,7 +226,9 @@ class Database:
             INNER JOIN commits ON commits.ID = results.commit_ID
             INNER JOIN runners ON runners.ID = results.runner_ID
             WHERE
-                runners.ID = '{runner_id}';
+                runners.ID = '{runner_id}'
+            ORDER BY
+                commit_ID DESC;
             '''.format(
                 runner_id=runner_id
             ))
