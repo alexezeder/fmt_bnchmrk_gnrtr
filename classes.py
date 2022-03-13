@@ -28,11 +28,13 @@ class Config:
     default_benchmark_runs: int = 2
     default_sleep_time: int = 60
     default_commit_bnchmrk_pages: bool = False
-    default_website_output_dir = os.getcwd()
-    default_database_dir = os.getcwd()
+    default_website_output_dir: str = os.getcwd()
+    default_database_dir: str = os.getcwd()
+    default_skip_faulty_commits: bool = False
 
     def __init__(self, max_threads: int, compilation_runs: int, compilations_pause: float, benchmark_runs: int,
-                 sleep_time: int, commit_bnchmrk_pages: bool, website_output_dir: str, database_dir: str):
+                 sleep_time: int, commit_bnchmrk_pages: bool, website_output_dir: str, database_dir: str,
+                 skip_faulty_commits: bool):
         self.ID: Optional[int] = None
         self.max_threads: int = max_threads
         self.compilation_runs: int = compilation_runs
@@ -45,6 +47,7 @@ class Config:
         else:
             self.website_output_dir: Optional[str] = website_output_dir
         self.database_dir: str = database_dir
+        self.skip_faulty_commits: bool = skip_faulty_commits
 
     def as_bytes(self) -> bytes:
         return pickle.dumps(self)

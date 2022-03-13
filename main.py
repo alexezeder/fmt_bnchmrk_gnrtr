@@ -99,7 +99,10 @@ def execute_task(docker_client: DockerClient, fmt_repo: FmtRepo, fmt_bnchmrk_rep
         docker_client.containers.run(get_image_name_for_runner(runner.name),
                                      detach=False, volumes=volumes, environment=environment, remove=True)
     except errors.ContainerError:
-        return None
+        if config.skip_faulty_commits:
+            return None
+        else:
+            raise
 
     results = get_stat_results(temp_dir_name)
     results.extend(get_suites_results(temp_dir_name))
@@ -211,8 +214,13 @@ if __name__ == '__main__':
                              '(default: "{}")'.format(Config.default_website_output_dir))
     parser.add_argument('--database-dir', dest='database_dir', type=str, default=Config.default_database_dir,
                         help='directory to save database file\n(default: "{}")'.format(Config.default_database_dir))
+    parser.add_argument('--skip-faulty-commits', dest='skip_faulty_commits', type=boolean_string,
+                        default=Config.default_skip_faulty_commits,
+                        help='skip commits that cannot be processed\n'
+                             '(default: "{}")'.format(Config.default_skip_faulty_commits))
 
     args = parser.parse_args()
     config: Config = Config(args.max_threads, args.compilation_runs, args.compilations_pause, args.benchmark_runs,
-                            args.sleep_time, args.commit_bnchmrk_pages, args.website_output_dir, args.database_dir)
+                            args.sleep_time, args.commit_bnchmrk_pages, args.website_output_dir, args.database_dir,
+                            args.skip_faulty_commits)
     main(config)
