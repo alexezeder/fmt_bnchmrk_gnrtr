@@ -109,7 +109,7 @@ def execute_task(docker_client: DockerClient, fmt_repo: FmtRepo, fmt_bnchmrk_rep
     return results
 
 
-def main(config: Config):
+def run(config: Config):
     with StepPrinter('Preparing fmt_bnchmrk repository'):
         fmt_bnchmrk_repo = FmtBnchmrkRepo()
     with StepPrinter('Preparing {fmt} repository'):
@@ -181,7 +181,7 @@ def main(config: Config):
                 time.sleep(config.sleep_time)
 
 
-if __name__ == '__main__':
+def main():
     def boolean_string(s):
         return s in {'True', 'true', '1', 'on', 'yes', 'y'}
 
@@ -223,4 +223,8 @@ if __name__ == '__main__':
     config: Config = Config(args.max_threads, args.compilation_runs, args.compilations_pause, args.benchmark_runs,
                             args.sleep_time, args.commit_bnchmrk_pages, args.website_output_dir, args.database_dir,
                             args.skip_faulty_commits)
-    main(config)
+    run(config)
+
+
+if __name__ == '__main__':
+    main()
