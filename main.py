@@ -97,7 +97,7 @@ def execute_task(docker_client: DockerClient, fmt_repo: FmtRepo, fmt_bnchmrk_rep
 
     try:
         docker_client.containers.run(get_image_name_for_runner(runner.name),
-                                     detach=False, volumes=volumes, environment=environment)
+                                     detach=False, volumes=volumes, environment=environment, remove=True)
     except errors.ContainerError:
         return None
 
